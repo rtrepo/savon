@@ -114,6 +114,15 @@ describe "Options" do
     end
   end
 
+  context "global :host" do
+    it "overrides the WSDL endpoint host" do
+      client = new_client(:wsdl => Fixture.wsdl(:no_message_tag), host: "https://example.com:8080")
+
+      request = client.build_request(:update_orders)
+      expect(request.url.to_s).to eq "https://example.com:8080/webserviceexternal/contracts.asmx"
+    end
+  end
+
   context "global :headers" do
     it "sets the HTTP headers for the next request" do
       client = new_client(:endpoint => @server.url(:inspect_request), :headers => { "X-Token" => "secret" })
@@ -504,46 +513,39 @@ describe "Options" do
 
   context "global :filters" do
     it "filters a list of XML tags from logged SOAP messages" do
-      silence_stdout do
+      captured = mock_stdout do
         client = new_client(:endpoint => @server.url(:repeat), :log => true)
-
         client.globals[:filters] << :password
-
-        # filter out logs we're not interested in
-        client.globals[:logger].expects(:info).at_least_once
-        client.globals[:logger].expects(:debug).at_least_once
-
-        # check whether the password is filtered
-        client.globals[:logger].expects(:debug).with { |message|
-          message.include? "<password>***FILTERED***</password>"
-        }.twice
 
         message = { :username => "luke", :password => "secret" }
         client.call(:authenticate, :message => message)
       end
+
+      captured.rewind
+      messages = captured.readlines.join("\n")
+
+      expect(messages).to include("<password>***FILTERED***</password>")
     end
   end
 
   context "global :pretty_print_xml" do
     it "is a nice but expensive way to debug XML messages" do
-      silence_stdout do
-        client = new_client(:endpoint => @server.url(:repeat), :pretty_print_xml => true, :log => true)
-
-        # filter out logs we're not interested in
-        client.globals[:logger].expects(:info).at_least_once
-        client.globals[:logger].expects(:debug).at_least_once
-
-        # check whether the message is pretty printed
-        client.globals[:logger].expects(:debug).with { |message|
-          envelope    = message =~ /\n<env:Envelope/
-          body        = message =~ /\n  <env:Body>/
-          message_tag = message =~ /\n    <tns:authenticate\/>/
-
-          envelope && body && message_tag
-        }.twice
+      captured = mock_stdout do
+        client = new_client(
+          :endpoint => @server.url(:repeat),
+          :pretty_print_xml => true,
+          :log => true)
+        client.globals[:logger].formatter = proc { |*, msg| "#{msg}\n" }
 
         client.call(:authenticate)
       end
+
+      captured.rewind
+      messages = captured.readlines.join("\n")
+
+      expect(messages).to match(/\n<env:Envelope/)
+      expect(messages).to match(/\n  <env:Body/)
+      expect(messages).to match(/\n    <tns:authenticate/)
     end
   end
 
@@ -585,7 +587,7 @@ describe "Options" do
         expect(request).to include("<wsse:Username>#{username}</wsse:Username>")
 
         # the nonce node
-        expect(request).to match(/<wsse:Nonce.*>.+\n<\/wsse:Nonce>/)
+        expect(request).to match(/<wsse:Nonce.*>.+\n?<\/wsse:Nonce>/)
 
         # the created node with a timestamp
         expect(request).to match(/<wsu:Created>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.*<\/wsu:Created>/)

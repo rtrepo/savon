@@ -1,3 +1,24 @@
+# 2.11.1 (2015-05-27)
+
+* Replace dependency on [uuid](https://rubygems.org/gems/uuid), using SecureRandom.uuid instead.
+
+# 2.11.0 (2015-03-31)
+
+* Formally drop support for 1.8.7. 
+
+# 2.10.1 (2015-03-15)
+
+* Feature: [#673](https://github.com/savonrb/savon/pull/673) Adds an :unwrap option that is passed to Gyoku.
+
+# 2.10.0 (2015-03-02)
+
+* Fix: This reverts a purported "fix" to operation names.
+
+# 2.9.0 (2015-01-29)
+
+* Feature: [#655] Wasabi exceptions should be rethrown as Savon errors. This should make it easier to catch errors thrown by Savon::Client.
+* Feature: [#630] ServiceFaults are correctly identified as Soap Faults.
+
 # 2.8.0 (2014-11-12)
 
 * Feature : [#620](https://github.com/savonrb/savon/pull/620) add #build_request method that builds the actual XML request body, but does not submit it. Useful for debugging, possibly.

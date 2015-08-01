@@ -4,6 +4,7 @@ require "savon/request"
 require "savon/builder"
 require "savon/response"
 require "savon/request_logger"
+require "savon/http_error"
 
 module Savon
   class Operation
@@ -22,6 +23,8 @@ module Savon
         raise UnknownOperationError, "Unable to find SOAP operation: #{operation_name.inspect}\n" \
                                      "Operations provided by your service: #{wsdl.soap_actions.inspect}"
       end
+    rescue Wasabi::Resolver::HTTPError => e
+      raise HTTPError.new(e.response)
     end
 
     def self.ensure_name_is_symbol!(operation_name)
@@ -123,7 +126,13 @@ module Savon
     end
 
     def endpoint
-      @globals[:endpoint] || @wsdl.endpoint
+      @globals[:endpoint] || @wsdl.endpoint.tap do |url|
+        if @globals[:host]
+          host_url = URI.parse(@globals[:host])
+          url.host = host_url.host
+          url.port = host_url.port
+        end
+      end
     end
 
     def raise_expected_httpi_response!

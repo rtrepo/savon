@@ -1,3 +1,3 @@
 module Savon
-  VERSION = '2.8.0'
+  VERSION = '2.11.1'
 end

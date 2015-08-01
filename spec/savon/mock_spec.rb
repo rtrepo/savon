@@ -23,6 +23,17 @@ describe "Savon's mock interface" do
     expect(response.http.body).to eq("<fixture/>")
   end
 
+  it "can verify a request with any parameters and return a fixture response" do
+    message = { :username => "luke", :password => :any }
+    savon.expects(:authenticate).with(:message => message).returns("<fixture/>")
+
+    response = new_client.call(:authenticate) do
+      message(:username => "luke", :password => "secret")
+    end
+
+    expect(response.http.body).to eq("<fixture/>")
+  end
+
   it "accepts a Hash to specify the response code, headers and body" do
     soap_fault = Fixture.response(:soap_fault)
     response = { :code => 500, :headers => { "X-Result" => "invalid" }, :body => soap_fault }
@@ -127,6 +138,12 @@ describe "Savon's mock interface" do
     expect { new_client.call(:find_user) }.to_not raise_error
   end
 
+  it "matchers can be used to specify the message" do
+    savon.expects(:find_user).with(:message => include(:username)).returns("<fixture/>")
+    message = { :username => "Han Solo", password: "querty"}
+
+    expect { new_client.call(:find_user, :message => message) }.to_not raise_error
+  end
 
   it "allows code to rescue Savon::Error and still report test failures" do
     message = { :username => "luke" }

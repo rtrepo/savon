@@ -89,6 +89,8 @@ module Savon
         :use_wsa_headers           => false,
         :no_message_tag            => false,
         :follow_redirects          => false,
+        :unwrap                    => false,
+        :host                      => nil
       }
 
       options = defaults.merge(options)
@@ -105,6 +107,11 @@ module Savon
     # Location of the local or remote WSDL document.
     def wsdl(wsdl_address)
       @options[:wsdl] = wsdl_address
+    end
+
+    # set different host for actions in WSDL
+    def host(host)
+      @options[:host] = host
     end
 
     # SOAP endpoint.
@@ -285,6 +292,12 @@ module Savon
     # Accepts one of :lower_camelcase, :camelcase, :upcase, or :none.
     def convert_request_keys_to(converter)
       @options[:convert_request_keys_to] = converter
+    end
+
+    # Tell Gyoku to unwrap Array of Hashes
+    # Accepts a boolean, default to false
+    def unwrap(unwrap)
+      @options[:unwrap] = unwrap
     end
 
     # Tell Nori how to convert XML tags from the SOAP response into Hash keys.
